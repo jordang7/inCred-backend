@@ -30,9 +30,7 @@ export default async function ipfsUpload(miner) {
     );
     image = await response.arrayBuffer();
   } else {
-    const response = await fetch(
-      "https://incred-jordang7.vercel.app/yellow.png"
-    );
+    const response = await fetch("https://incred-jordang7.vercel.app/gold.png");
     image = await response.arrayBuffer();
   }
   //console.log(image)
