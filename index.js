@@ -69,7 +69,7 @@ async function mintCredential(miner) {
   console.log("MINTING", priorityFee);
   const txn = await credentialContract
     .connect(signer)
-    .safeMint("0x6F234Fa20558743970ccEBD6AF259fCB49eeA73c", tokenURI, {
+    .safeMint("0x6F234Fa20558743970ccEBD6AF259fCB49eeA73c",miner.address, tokenURI, {
       maxPriorityFeePerGas: priorityFee,
     }); // will f4 address work here??
   console.log(txn);
