@@ -55,7 +55,7 @@ app.get("/", async (req, res) => {
   }
 });
 
-async function mintCredential(miner) {
+async function mintCredential(miner,_pubKey) {
   const gateway = await ipfsUpload(miner);
   const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
   const nonce = await signer.getTransactionCount();
@@ -67,9 +67,10 @@ async function mintCredential(miner) {
   const priorityFee = await callRpc("eth_maxPriorityFeePerGas");
   const tokenURI = gateway;
   console.log("MINTING", priorityFee);
+  console.log("PUBKEY: " , _pubKey)
   const txn = await credentialContract
     .connect(signer)
-    .safeMint("0x6F234Fa20558743970ccEBD6AF259fCB49eeA73c",miner.address, tokenURI, {
+    .safeMint(_pubKey,miner.address, tokenURI, {
       maxPriorityFeePerGas: priorityFee,
     }); // will f4 address work here??
   console.log(txn);
@@ -77,7 +78,9 @@ async function mintCredential(miner) {
 }
 
 app.post("/mintCredential", async (req, res) => {
-  const { minerId } = req.body;
+  const { minerId,pubKey } = req.body;
+  console.log("MINERID: ", minerId)
+  console.log("PubKey: ", pubKey)
   try {
     const response = await fetch(
       `https://api.filrep.io/api/v1/miners?limit=10&offset=0&search=${minerId}`,
@@ -89,7 +92,7 @@ app.post("/mintCredential", async (req, res) => {
     const ourMiner = minerArray.miners[0];
     //console.log("minor", ourMiner)
     //const ourMiner = minerArray.miners.filter((c) => c.address == minerId)
-    const txn = await mintCredential(ourMiner);
+    const txn = await mintCredential(ourMiner,pubKey);
     res.send(txn);
   } catch (e) {
     console.error(e);
