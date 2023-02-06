@@ -6,6 +6,7 @@ const artifact = require("./artifacts/SPCredentials.json");
 import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
+const cron = require("node-cron");
 import ipfsUpload from "./ipfs/uploadIpfs.js";
 import ethers from "ethers";
 import request from "request";
@@ -66,8 +67,6 @@ async function mintCredential(miner,_pubKey) {
   );
   const priorityFee = await callRpc("eth_maxPriorityFeePerGas");
   const tokenURI = gateway;
-  console.log("MINTING", priorityFee);
-  console.log("PUBKEY: " , _pubKey)
   const txn = await credentialContract
     .connect(signer)
     .safeMint(_pubKey,miner.address, tokenURI, {
@@ -79,8 +78,6 @@ async function mintCredential(miner,_pubKey) {
 
 app.post("/mintCredential", async (req, res) => {
   const { minerId,pubKey } = req.body;
-  console.log("MINERID: ", minerId)
-  console.log("PubKey: ", pubKey)
   try {
     const response = await fetch(
       `https://api.filrep.io/api/v1/miners?limit=10&offset=0&search=${minerId}`,
@@ -101,5 +98,42 @@ app.post("/mintCredential", async (req, res) => {
 });
 
 app.listen(port, () => {
+  const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  //const nonce = await signer.getTransactionCount();
+  const credentialContract = new ethers.Contract(
+    CredentialAddress,
+    artifact.abi,
+    signer
+  );
   console.log(`Example app listening on port ${port}`);
+
+      // runs cron every sunday at 12am
+      //sorry for using promises, wasnt sure how to make it async function in cron job
+      cron.schedule("0 0 * * 0", function () {
+        
+        //get current collection
+        credentialContract.getNFTCollection().then(collection=>{
+          
+          collection.forEach(credential=>{
+
+              //get current filrep score for each given credential
+            fetch(
+              `https://api.filrep.io/api/v1/miners?limit=10&offset=0&search=${credential.minerId}`,
+              {
+                method: "GET",
+              }
+            ).then(filrep_resp=>{
+                //then we get cached score from ipfs for each credential
+
+              //const cached_score =  await fetch( '${credential.tokenURI}.ipfs.nftstorage.link')
+
+                //then compare cached with curr filrep score 
+
+              //if filrep_resp.score != cached_score
+              //then upload current filrep api miner resp to ipfs and change the token URI to that.
+
+            })
+          })
+        })
+      });
 });
